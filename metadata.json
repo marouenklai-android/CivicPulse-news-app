@@ -1,0 +1,6 @@
+{
+  "name": "CivicPulse",
+  "description": "Modern AI-powered political news app with outlet coverage comparison, AI summaries, country & topic filtering, bookmarks, search, and custom editorial AI image generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
