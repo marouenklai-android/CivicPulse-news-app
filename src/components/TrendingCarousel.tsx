@@ -1,8 +1,9 @@
 import React from 'react';
 import { Article } from '../types';
 import { Sparkles, Clock, ArrowRight } from 'lucide-react';
-import { motion } from 'motion/react';
 import { LanguageCode, t } from '../translations';
+import { getCountryInfo } from '../utils/countryHelper';
+import { formatTimeAgo } from '../utils/timeHelper';
 
 interface TrendingCarouselProps {
   articles: Article[];
@@ -49,55 +50,66 @@ export const TrendingCarousel: React.FC<TrendingCarouselProps> = ({
         </div>
       ) : (
         <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1 -mx-4 px-4 touch-pan-x">
-          {articles.map((art) => (
-            <motion.div
-              key={art.id}
-              layoutId={`article-card-${art.id}`}
-              onClick={() => onSelectArticle(art)}
-              className="flex-none w-[280px] sm:w-[320px] snap-start bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group shrink-0"
-            >
-              {/* Image Header */}
-              <div className="h-40 w-full relative overflow-hidden bg-slate-100 dark:bg-slate-800">
-                <motion.img
-                  layoutId={`article-image-${art.id}`}
-                  src={art.imageUrl}
-                  alt={art.imageAlt}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                  <span className="bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
-                    {art.topicLabel}
-                  </span>
-                  <span className="bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1">
-                    <Sparkles className="w-2.5 h-2.5 text-yellow-300" />
-                    {t(lang, 'aiSummary')}
-                  </span>
-                </div>
-              </div>
+          {articles.map((art) => {
+            const countryInfo = getCountryInfo(art.country, art.countryLabel);
+            const timeDisplay = formatTimeAgo(art.publishedAt, art.timeAgo);
 
-              {/* Card Content */}
-              <div className="p-3.5">
-                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
-                  <motion.span layoutId={`article-source-${art.id}`} className="font-semibold text-slate-700 dark:text-slate-300">
-                    {art.source}
-                  </motion.span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {art.timeAgo}
-                  </span>
+            return (
+              <div
+                key={`carousel-${art.id}`}
+                onClick={() => onSelectArticle(art)}
+                className="flex-none w-[280px] sm:w-[320px] snap-start bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group shrink-0"
+              >
+                {/* Image Header */}
+                <div className="h-40 w-full relative overflow-hidden bg-slate-100 dark:bg-slate-800">
+                  <img
+                    src={art.imageUrl}
+                    alt={art.imageAlt}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+
+                  {/* Top Overlay Container with non-overlapping flex layout */}
+                  <div className="absolute top-2.5 inset-x-2.5 flex items-start justify-between gap-1.5 pointer-events-none z-10">
+                    <div className="flex items-center gap-1 flex-wrap max-w-[62%]">
+                      <span className="bg-slate-900/85 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider shadow-xs truncate">
+                        {art.topicLabel}
+                      </span>
+                      <span className="bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-semibold px-1.5 py-0.5 rounded flex items-center gap-1 shadow-xs">
+                        <Sparkles className="w-2.5 h-2.5 text-yellow-300" />
+                        <span>AI</span>
+                      </span>
+                    </div>
+
+                    {/* Country Badge Overlay */}
+                    <div className="bg-slate-900/85 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 border border-white/20 shrink-0 shadow-xs">
+                      <span>{countryInfo.flag}</span>
+                      <span>{countryInfo.label}</span>
+                    </div>
+                  </div>
                 </div>
-                <motion.h3
-                  layoutId={`article-title-${art.id}`}
-                  className="font-serif font-semibold text-sm leading-snug text-slate-900 dark:text-slate-100 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
-                >
-                  {art.title}
-                </motion.h3>
+
+                {/* Card Content */}
+                <div className="p-3.5">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[170px]">
+                      {art.source}
+                    </span>
+                    <span className="flex items-center gap-1 shrink-0">
+                      <Clock className="w-3 h-3" />
+                      {timeDisplay}
+                    </span>
+                  </div>
+                  <h3 className="font-serif font-semibold text-sm leading-snug text-slate-900 dark:text-slate-100 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    {art.title}
+                  </h3>
+                </div>
               </div>
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>
   );
 };
+

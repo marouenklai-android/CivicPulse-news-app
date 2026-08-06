@@ -1,5 +1,6 @@
 import { Article, TopicCode } from '../types';
 import { INITIAL_ARTICLES } from '../data/newsData';
+import { formatTimeAgo } from '../utils/timeHelper';
 
 export interface GdeltApiResponse {
   articles?: Array<{
@@ -192,7 +193,7 @@ export async function fetchGdeltClientNews(
         author: domain,
         source: `${domain} (GDELT)`,
         publishedAt: publishedIso,
-        timeAgo: 'Live (GDELT API)',
+        timeAgo: formatTimeAgo(publishedIso),
         readTimeMinutes: 4,
         country: 'global',
         countryLabel: sourceCountry,

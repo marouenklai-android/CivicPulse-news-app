@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Article, OutletCoverage } from '../types';
-import { SplitSquareVertical, Sparkles, Scale, Info, CheckCircle, AlertTriangle, ArrowRight } from 'lucide-react';
+import { SplitSquareVertical, Sparkles, Scale, Info, CheckCircle, AlertTriangle, ShieldCheck, Feather } from 'lucide-react';
 import { LanguageCode, t } from '../translations';
 
 interface CompareCoverageViewProps {
@@ -16,10 +16,13 @@ interface FramingResult {
   keyTone: string;
   highlightedElements: string;
   omittedElements: string;
+  proAnalysis?: string;
+  rhetoricTechnique?: string;
 }
 
 interface ComparisonData {
   neutralBaseline: string;
+  proAnalysisSummary?: string;
   framingAnalysis: FramingResult[];
   mediaInsight: string;
 }
@@ -63,6 +66,12 @@ export const CompareCoverageView: React.FC<CompareCoverageViewProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (currentArticle && !comparisonData) {
+      handleRunAiComparison();
+    }
+  }, [currentArticle?.id]);
+
   const getBiasLabel = (bias: string) => {
     const b = (bias || '').toLowerCase();
     if (b.includes('center')) return t(lang, 'biasCenter');
@@ -87,7 +96,7 @@ export const CompareCoverageView: React.FC<CompareCoverageViewProps> = ({
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       {/* Header section */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-700/50">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-indigo-950 text-white rounded-2xl p-6 shadow-md border border-slate-700/50">
         <div className="flex items-center gap-2 text-blue-400 font-semibold text-xs mb-2 uppercase tracking-wider">
           <SplitSquareVertical className="w-4 h-4" />
           <span>{t(lang, 'multiOutletMatrix')}</span>
@@ -157,16 +166,16 @@ export const CompareCoverageView: React.FC<CompareCoverageViewProps> = ({
         </p>
       </div>
 
-      {/* AI Neutral Synthesis Section (If generated) */}
+      {/* AI Neutral Synthesis & Pro Analysis Section */}
       {comparisonData && (
-        <div className="bg-gradient-to-br from-blue-50/90 to-indigo-50/90 dark:from-slate-800/90 dark:to-slate-900/90 rounded-2xl p-5 border border-blue-200 dark:border-blue-800 shadow-sm animate-in fade-in duration-300 space-y-4">
+        <div className="bg-gradient-to-br from-blue-50/90 to-indigo-50/90 dark:from-slate-850 dark:to-slate-900 rounded-2xl p-5 border border-blue-200 dark:border-blue-800/80 shadow-sm animate-in fade-in duration-300 space-y-4">
           <div className="flex items-center justify-between border-b border-blue-200/60 dark:border-slate-700/60 pb-3">
             <div className="flex items-center gap-2 text-blue-800 dark:text-blue-300 font-semibold text-sm">
               <Scale className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <span>{t(lang, 'neutralFactSynthesis')}</span>
             </div>
             <span className="text-[10px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded">
-              Gemini Flash 3.6
+              Gemini Flash 3.6 Pro Intelligence
             </span>
           </div>
 
@@ -178,6 +187,19 @@ export const CompareCoverageView: React.FC<CompareCoverageViewProps> = ({
               "{comparisonData.neutralBaseline}"
             </p>
           </div>
+
+          {/* Pro Analysis Summary */}
+          {comparisonData.proAnalysisSummary && (
+            <div className="bg-white/90 dark:bg-slate-800/90 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800/60 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>{t(lang, 'proAnalysisSummaryTitle')}</span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-sans">
+                {comparisonData.proAnalysisSummary}
+              </p>
+            </div>
+          )}
 
           {comparisonData.mediaInsight && (
             <div className="bg-white/80 dark:bg-slate-800/80 rounded-xl p-3 border border-blue-100 dark:border-slate-700 flex items-start gap-2.5">
@@ -224,7 +246,7 @@ export const CompareCoverageView: React.FC<CompareCoverageViewProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {(currentArticle.outletsCoverage || [])
             .filter(outlet => activeTabFilter === 'all' || outlet.bias !== 'center')
             .map((outlet, index) => {
@@ -239,18 +261,25 @@ export const CompareCoverageView: React.FC<CompareCoverageViewProps> = ({
                 className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div>
-                  {/* Outlet Logo & Bias Tag */}
-                  <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                  {/* Outlet Logo, Bias Tag & Technique */}
+                  <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-3 flex-wrap gap-2">
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                       {outlet.outletName}
                     </span>
-                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                      outlet.bias === 'center' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' :
-                      outlet.bias.includes('left') ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' :
-                      'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                    }`}>
-                      {getBiasLabel(outlet.bias)}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {aiFraming?.rhetoricTechnique && (
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
+                          {aiFraming.rhetoricTechnique}
+                        </span>
+                      )}
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                        outlet.bias === 'center' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' :
+                        outlet.bias.includes('left') ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' :
+                        'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                      }`}>
+                        {getBiasLabel(outlet.bias)}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Headline as published */}
@@ -276,22 +305,37 @@ export const CompareCoverageView: React.FC<CompareCoverageViewProps> = ({
                   </div>
                 </div>
 
-                {/* AI Detailed Framing Analysis Card Footer */}
+                {/* AI Detailed Framing & Pro Analysis Section */}
                 {aiFraming ? (
-                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs space-y-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
-                    <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 font-semibold text-[11px]">
+                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs space-y-2.5 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl">
+                    <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 font-semibold text-[11px] flex-wrap gap-1">
                       <span>{t(lang, 'editorialAngleLabel')} {aiFraming.editorialAngle}</span>
-                      <span className="bg-blue-100 dark:bg-blue-900/60 px-1.5 py-0.2 rounded text-[10px]">
+                      <span className="bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded text-[10px] font-bold">
                         {t(lang, 'toneLabel')} {aiFraming.keyTone}
                       </span>
                     </div>
 
-                    <div className="text-[11px] text-slate-700 dark:text-slate-300">
-                      <strong className="text-emerald-700 dark:text-emerald-400">{t(lang, 'emphasizes')}</strong> {aiFraming.highlightedElements}
+                    <div className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
+                      <strong className="text-emerald-700 dark:text-emerald-400 block mb-0.5">{t(lang, 'emphasizes')}</strong>
+                      <span>{aiFraming.highlightedElements}</span>
                     </div>
-                    <div className="text-[11px] text-slate-700 dark:text-slate-300">
-                      <strong className="text-amber-700 dark:text-amber-400">{t(lang, 'downplaysOmits')}</strong> {aiFraming.omittedElements}
+
+                    {/* Prominent Downplays / Omits Section */}
+                    <div className="text-[11px] bg-amber-500/10 dark:bg-amber-500/15 border border-amber-300/40 dark:border-amber-700/40 p-2.5 rounded-lg text-slate-800 dark:text-slate-200 leading-relaxed">
+                      <strong className="text-amber-700 dark:text-amber-400 block mb-0.5">{t(lang, 'downplaysOmits')}</strong>
+                      <span>{aiFraming.omittedElements}</span>
                     </div>
+
+                    {/* Detailed Pro Media Critique */}
+                    {aiFraming.proAnalysis && (
+                      <div className="text-[11px] bg-indigo-500/10 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-800/50 p-2.5 rounded-lg text-slate-800 dark:text-slate-200 leading-relaxed">
+                        <strong className="text-indigo-700 dark:text-indigo-400 block mb-0.5 flex items-center gap-1">
+                          <Feather className="w-3 h-3" />
+                          <span>{t(lang, 'proAnalysisLabel')}</span>
+                        </strong>
+                        <span>{aiFraming.proAnalysis}</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <button
@@ -310,3 +354,4 @@ export const CompareCoverageView: React.FC<CompareCoverageViewProps> = ({
     </div>
   );
 };
+

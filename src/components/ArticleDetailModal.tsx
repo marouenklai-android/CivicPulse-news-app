@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Article } from '../types';
 import { 
   X, 
@@ -12,10 +12,16 @@ import {
   SplitSquareVertical, 
   ExternalLink, 
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  RefreshCw,
+  ImageIcon,
+  Wand2
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { LanguageCode, t } from '../translations';
+import { getDynamicArticleImage, generateAiStoryImageUrl } from '../utils/dynamicImage';
+import { getCountryInfo } from '../utils/countryHelper';
+import { formatTimeAgo } from '../utils/timeHelper';
 
 interface ArticleDetailModalProps {
   article: Article | null;
@@ -38,8 +44,22 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
   const [fontSize, setFontSize] = useState<'normal' | 'large' | 'xlarge'>('normal');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [visualMode, setVisualMode] = useState<'default' | 'dynamic_photo' | 'ai_art'>('default');
+  const [variantIndex, setVariantIndex] = useState(0);
 
   if (!article) return null;
+
+  const countryInfo = getCountryInfo(article.country, article.countryLabel);
+
+  const getActiveImageUrl = () => {
+    if (visualMode === 'ai_art') {
+      return generateAiStoryImageUrl(article.title, article.topicLabel, `${article.id}-${variantIndex}`);
+    }
+    if (visualMode === 'dynamic_photo') {
+      return getDynamicArticleImage(article, variantIndex + 1);
+    }
+    return article.imageUrl || getDynamicArticleImage(article, 0);
+  };
 
   const fontClasses = {
     normal: 'text-base leading-relaxed',
@@ -177,17 +197,24 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
         <div className="p-4 sm:p-8 overflow-y-auto max-h-[85vh]">
           {/* Main Title & Subtitle */}
           <div className="mb-6">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 flex-wrap">
               <motion.span
                 layoutId={`article-source-${article.id}`}
-                className="text-slate-900 dark:text-slate-100 font-bold"
+                className="bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 px-2.5 py-0.5 rounded-full font-bold"
               >
                 {article.source}
               </motion.span>
-              <span>•</span>
+
+              {/* Country Badge */}
+              <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-2.5 py-0.5 rounded-full font-medium shadow-2xs">
+                <span>{countryInfo.flag}</span>
+                <span>{countryInfo.label}</span>
+              </span>
+
+              <span className="text-slate-400 dark:text-slate-600">•</span>
               <span>{t(lang, 'byAuthor')} {article.author}</span>
-              <span>•</span>
-              <span>{article.timeAgo}</span>
+              <span className="text-slate-400 dark:text-slate-600">•</span>
+              <span>{formatTimeAgo(article.publishedAt, article.timeAgo)}</span>
             </div>
 
             <motion.h1
@@ -204,17 +231,70 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
             )}
           </div>
 
-          {/* Featured Image */}
-          <div className="mb-6 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 aspect-video relative">
+          {/* Featured Image with Dynamic Visual Controls */}
+          <div className="mb-6 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 aspect-video relative group shadow-sm">
             <motion.img
+              key={getActiveImageUrl()}
               layoutId={`article-image-${article.id}`}
-              src={article.imageUrl}
+              src={getActiveImageUrl()}
               alt={article.imageAlt}
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-all duration-300"
+              onError={(e) => {
+                // Fallback to dynamic photography if image fails to load
+                (e.target as HTMLImageElement).src = getDynamicArticleImage(article, 0);
+              }}
             />
-            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-slate-900/80 to-transparent text-white text-xs italic">
-              {article.imageAlt}
+            
+            {/* Visual Controls Overlay */}
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md p-1 rounded-xl border border-white/20 text-xs text-white">
+              <button
+                onClick={() => setVisualMode('default')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-colors flex items-center gap-1 ${
+                  visualMode === 'default' ? 'bg-blue-600 text-white font-bold' : 'hover:bg-white/10 text-slate-200'
+                }`}
+                title="Original Story Photo"
+              >
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Press Photo</span>
+              </button>
+
+              <button
+                onClick={() => setVisualMode('dynamic_photo')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-colors flex items-center gap-1 ${
+                  visualMode === 'dynamic_photo' ? 'bg-blue-600 text-white font-bold' : 'hover:bg-white/10 text-slate-200'
+                }`}
+                title="Contextual Photographic Pool"
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden sm:inline">Context Photo</span>
+              </button>
+
+              <button
+                onClick={() => setVisualMode('ai_art')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-colors flex items-center gap-1 ${
+                  visualMode === 'ai_art' ? 'bg-amber-600 text-white font-bold' : 'hover:bg-white/10 text-slate-200'
+                }`}
+                title="AI Rendered Story Visual"
+              >
+                <Wand2 className="w-3.5 h-3.5 text-amber-300" />
+                <span className="hidden sm:inline">AI Story Art</span>
+              </button>
+
+              <button
+                onClick={() => setVariantIndex(prev => prev + 1)}
+                className="p-1 rounded-lg hover:bg-white/20 text-slate-200 transition-colors"
+                title="Cycle to next dynamic angle"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent text-white text-xs italic flex items-center justify-between">
+              <span className="truncate max-w-[80%]">{article.imageAlt || article.title}</span>
+              <span className="not-italic font-sans text-[10px] bg-slate-800/80 text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/30">
+                {visualMode === 'ai_art' ? 'AI Generated Visual' : visualMode === 'dynamic_photo' ? 'Context Photography' : 'Story Press Image'}
+              </span>
             </div>
           </div>
 
