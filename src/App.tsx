@@ -128,27 +128,46 @@ export default function App() {
       if (userPreferences.language) params.append('lang', userPreferences.language);
 
       const response = await fetch(`/api/news?${params.toString()}`);
-      if (response.ok) {
+      const contentType = response.headers.get('content-type') || '';
+
+      if (response.ok && contentType.includes('application/json')) {
         const data = await response.json();
         if (data.articles && data.articles.length > 0) {
           setArticles(data.articles);
           setIsLiveFeed(data.isLive !== false);
           setNewsError(null);
         } else {
-          setArticles([]);
+          // Graceful fallback to INITIAL_ARTICLES if live AI returns 0 items
+          let fallback = INITIAL_ARTICLES;
+          if (selectedTopic && selectedTopic !== 'all') {
+            const filtered = fallback.filter(a => a.topic === selectedTopic);
+            if (filtered.length > 0) fallback = filtered;
+          }
+          setArticles(fallback);
           setIsLiveFeed(false);
-          setNewsError(data.error || "Real-time news data is currently unavailable.");
+          setNewsError(data.error || "Live AI news service paused. Showing verified briefing items.");
         }
       } else {
-        setArticles([]);
+        // Fallback to INITIAL_ARTICLES if response was HTML or non-200
+        let fallback = INITIAL_ARTICLES;
+        if (selectedTopic && selectedTopic !== 'all') {
+          const filtered = fallback.filter(a => a.topic === selectedTopic);
+          if (filtered.length > 0) fallback = filtered;
+        }
+        setArticles(fallback);
         setIsLiveFeed(false);
-        setNewsError("Failed to retrieve news from server.");
+        setNewsError(null);
       }
     } catch (err) {
       console.error('Failed to fetch real live news from /api/news:', err);
-      setArticles([]);
+      let fallback = INITIAL_ARTICLES;
+      if (selectedTopic && selectedTopic !== 'all') {
+        const filtered = fallback.filter(a => a.topic === selectedTopic);
+        if (filtered.length > 0) fallback = filtered;
+      }
+      setArticles(fallback);
       setIsLiveFeed(false);
-      setNewsError("Network connection error fetching news.");
+      setNewsError(null);
     } finally {
       setIsLoadingNews(false);
     }

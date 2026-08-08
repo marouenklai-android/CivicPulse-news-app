@@ -2,6 +2,8 @@ node_modules/
 build/
 dist/
 coverage/
+.gradle/
+.idea/
 .DS_Store
 *.log
 .env*

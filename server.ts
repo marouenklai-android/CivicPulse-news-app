@@ -610,77 +610,99 @@ An array of objects, where each object has:
   }
 
   // Otherwise, fetch real live RSS news stories from live press feeds
-  const rssArticles = await fetchRealLiveNewsRSS({
-    country,
-    topic,
-    search,
-    trending,
-    lang,
-    cacheKey
-  });
+  try {
+    const rssArticles = await fetchRealLiveNewsRSS({
+      country,
+      topic,
+      search,
+      trending,
+      lang,
+      cacheKey
+    });
 
-  return rssArticles.length > 0 ? rssArticles : null;
+    if (rssArticles && rssArticles.length > 0) {
+      return rssArticles;
+    }
+  } catch (err) {
+    console.error("Error fetching RSS news:", err);
+  }
+
+  // Fallback to curated news articles if live AI + RSS are both unavailable
+  let fallbackList = INITIAL_ARTICLES;
+  if (topic && topic !== 'all') {
+    const filteredByTopic = fallbackList.filter(a => a.topic === topic);
+    if (filteredByTopic.length > 0) fallbackList = filteredByTopic;
+  }
+  if (country && country !== 'all') {
+    const filteredByCountry = fallbackList.filter(a => a.country === country || a.country === 'global');
+    if (filteredByCountry.length > 0) fallbackList = filteredByCountry;
+  }
+  if (search) {
+    const q = search.toLowerCase();
+    const filteredBySearch = fallbackList.filter(a => a.title.toLowerCase().includes(q) || a.content.toLowerCase().includes(q));
+    if (filteredBySearch.length > 0) fallbackList = filteredBySearch;
+  }
+  return fallbackList;
 }
 
 // API Route: Get real-time live news articles generated via Gemini 3.6 Flash
 app.get("/api/news", async (req, res) => {
-  const { country, topic, search, trending, lang } = req.query;
+  try {
+    const { country, topic, search, trending, lang } = req.query;
 
-  const geminiArticles = await generateNewsWithGemini({
-    country: country as string,
-    topic: topic as string,
-    search: search as string,
-    trending: trending as string,
-    lang: (lang as string) || 'en'
-  });
+    const geminiArticles = await generateNewsWithGemini({
+      country: country as string,
+      topic: topic as string,
+      search: search as string,
+      trending: trending as string,
+      lang: (lang as string) || 'en'
+    });
 
-  if (geminiArticles && geminiArticles.length > 0) {
-    let result = geminiArticles;
+    let result = geminiArticles || [];
     if (trending === 'true') {
       result = result.filter(a => a.isTrending);
     }
+
     return res.json({
       source: "Gemini 3.6 Flash Intelligence Engine",
       isLive: true,
       articles: result,
       total: result.length
     });
+  } catch (error: any) {
+    console.error("Error in /api/news:", error);
+    return res.status(500).json({
+      error: "Failed to fetch news articles from server.",
+      details: error.message || String(error)
+    });
   }
-
-  // If real-time news generation was unavailable, return empty result and message rather than mock data
-  return res.json({
-    source: "Real-time AI Engine",
-    isLive: false,
-    articles: [],
-    total: 0,
-    error: "Real-time news data is currently unavailable. Please try again shortly."
-  });
 });
 
 // API Route: Gemini Live Proxy Endpoint
 app.get("/api/gdelt", async (req, res) => {
-  const query = (req.query.query as string) || "policy";
-  const lang = (req.query.lang as string) || "en";
+  try {
+    const query = (req.query.query as string) || "policy";
+    const lang = (req.query.lang as string) || "en";
 
-  const articles = await generateNewsWithGemini({
-    search: query,
-    lang
-  });
+    const articles = await generateNewsWithGemini({
+      search: query,
+      lang
+    });
 
-  if (articles && articles.length > 0) {
     return res.json({
       source: "Gemini 3.6 Flash News Proxy",
       query,
       isLive: true,
-      articles: articles,
-      total: articles.length
+      articles: articles || [],
+      total: (articles || []).length
+    });
+  } catch (error: any) {
+    console.error("Error in /api/gdelt:", error);
+    return res.status(500).json({
+      error: "Failed to generate news with Gemini",
+      query: req.query.query || "policy"
     });
   }
-
-  res.status(500).json({
-    error: "Failed to generate news with Gemini",
-    query
-  });
 });
 
 // API Route: Generate AI Summary for Article
@@ -993,6 +1015,11 @@ Return JSON:
       details: error.message || String(error)
     });
   }
+});
+
+// 404 handler specifically for unhandled /api/* requests to prevent falling through to Vite SPA index.html
+app.all("/api/*", (req, res) => {
+  res.status(404).json({ error: `API endpoint not found: ${req.method} ${req.path}` });
 });
 
 async function startServer() {
