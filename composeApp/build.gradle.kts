@@ -3,24 +3,22 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
-    kotlin("plugin.serialization") version "2.0.20"
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "17"
-            }
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
     
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
+    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget> {
+        binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
         }
@@ -39,14 +37,14 @@ kotlin {
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.8.2")
             
             // Kotlin Coroutines & Serialization
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
         }
         
         androidMain.dependencies {
             implementation(compose.preview)
-            implementation("androidx.activity:activity-compose:1.9.1")
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.kotlinx.coroutines.android)
         }
     }
 }

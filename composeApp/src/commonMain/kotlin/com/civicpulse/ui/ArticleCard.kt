@@ -87,15 +87,17 @@ fun ArticleCard(
                 lineHeight = 22.sp
             )
 
-            if (!article.subtitle.isNull_or_empty()) {
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = article.subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+            article.subtitle?.let { subtitle ->
+                if (subtitle.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -150,7 +152,6 @@ fun ArticleCard(
     }
 }
 
-private fun String?.isNull_or_empty(): Boolean = this.isNullOrEmpty()
 
 @Composable
 fun CompactArticleCard(

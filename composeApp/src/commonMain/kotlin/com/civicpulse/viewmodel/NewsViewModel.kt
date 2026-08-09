@@ -60,14 +60,24 @@ class NewsViewModel(
 
     // Combined UI state pipeline using Kotlin Coroutines StateFlow
     val uiState: StateFlow<NewsUiState> = combine(
-        _articles,
-        _selectedCountry,
-        _selectedTopic,
-        _savedArticleIds,
-        _searchQuery,
-        _userPreferences,
-        _dailyBriefingState
-    ) { articles, country, topic, savedIds, query, prefs, briefing ->
+        listOf(
+            _articles,
+            _selectedCountry,
+            _selectedTopic,
+            _savedArticleIds,
+            _searchQuery,
+            _userPreferences,
+            _dailyBriefingState
+        )
+    ) { args ->
+        val articles = args[0] as List<Article>
+        val country = args[1] as CountryCode
+        val topic = args[2] as TopicCode
+        val savedIds = args[3] as Set<String>
+        val query = args[4] as String
+        val prefs = args[5] as UserPreferences
+        val briefing = args[6] as DailyBriefingState
+
         if (articles.isEmpty()) {
             NewsUiState.Loading
         } else {

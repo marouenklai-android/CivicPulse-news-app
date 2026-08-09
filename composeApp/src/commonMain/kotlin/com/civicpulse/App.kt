@@ -31,7 +31,7 @@ fun App() {
             else -> false
         }
 
-        CivicPulseTheme(darkTheme = isDarkTheme) {
+        CivicPulseTheme(useDarkTheme = isDarkTheme) {
             Scaffold(
                 topBar = {
                     HeaderBar(
