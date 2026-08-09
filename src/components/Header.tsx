@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Moon, Sun, Bookmark, Globe, Smartphone, Monitor } from 'lucide-react';
+import { Search, Moon, Sun, Bookmark, Globe } from 'lucide-react';
 import { LanguageCode, LANGUAGES, t } from '../translations';
 
 interface HeaderProps {
@@ -10,8 +10,6 @@ interface HeaderProps {
   onOpenSearch: () => void;
   savedCount: number;
   onOpenSaved: () => void;
-  isAndroidFrame?: boolean;
-  onToggleAndroidFrame?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,52 +20,27 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSearch,
   savedCount,
   onOpenSaved,
-  isAndroidFrame,
-  onToggleAndroidFrame,
 }) => {
   return (
-    <header className={`sticky top-0 z-40 w-full backdrop-blur-md bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 transition-colors ${
-      isAndroidFrame ? 'rounded-t-[36px]' : ''
-    }`}>
-      <div className="max-w-4xl mx-auto px-3 sm:px-4 h-15 flex items-center justify-between gap-2 overflow-hidden">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 transition-colors">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2 overflow-hidden">
         {/* Brand Logo & Name */}
         <div className="flex items-center gap-2 cursor-pointer shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-500 dark:to-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20 shrink-0">
-            <span className="font-serif text-base tracking-wider">C</span>
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20 shrink-0">
+            <span className="font-serif text-base sm:text-lg tracking-wider">C</span>
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h1 className="font-serif font-bold text-base leading-none tracking-tight text-slate-900 dark:text-slate-100 truncate">
-                Civic<span className="text-blue-600 dark:text-blue-400">Pulse</span>
-              </h1>
-              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-bold uppercase tracking-wider hidden xs:inline-block">
-                Android
-              </span>
-            </div>
-            <p className="text-[9px] font-sans text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest leading-none mt-0.5 truncate hidden xs:block">
+            <h1 className="font-serif font-bold text-base sm:text-lg leading-none tracking-tight text-slate-900 dark:text-slate-100 truncate">
+              Civic<span className="text-blue-600 dark:text-blue-400">Pulse</span>
+            </h1>
+            <p className="text-[9px] sm:text-[10px] font-sans text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest leading-none mt-0.5 truncate hidden xs:block">
               {t(language, 'tagline')}
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          {/* Android Frame Device Switcher */}
-          {onToggleAndroidFrame && (
-            <button
-              onClick={onToggleAndroidFrame}
-              className={`p-1.5 sm:px-2.5 sm:py-1 rounded-full text-[11px] font-bold flex items-center gap-1 transition-all ${
-                isAndroidFrame
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-              title={isAndroidFrame ? 'Switch to Full Width View' : 'Switch to Android Pixel Device Frame'}
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">{isAndroidFrame ? 'Phone Frame' : 'Device Mode'}</span>
-            </button>
-          )}
-
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Language Selector Dropdown */}
           <div className="relative flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-1.5 sm:px-2 py-1 border border-slate-200 dark:border-slate-700">
             <Globe className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
@@ -87,21 +60,21 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Search Button */}
           <button
             onClick={onOpenSearch}
-            className="p-1.5 sm:p-2 rounded-full text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/80 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors shrink-0"
+            className="p-2 rounded-full text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/80 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors shrink-0"
             title="Search articles & filters"
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           {/* Bookmarks Button */}
           <button
             onClick={onOpenSaved}
-            className="relative p-1.5 sm:p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+            className="relative p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
             title="Saved Bookmarks"
           >
-            <Bookmark className="w-4 h-4" />
+            <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
             {savedCount > 0 && (
-              <span className="absolute top-0 right-0 w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
                 {savedCount}
               </span>
             )}
@@ -114,9 +87,9 @@ export const Header: React.FC<HeaderProps> = ({
             title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
           >
             {theme === 'light' ? (
-              <Moon className="w-4 h-4 text-slate-700" />
+              <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" />
             ) : (
-              <Sun className="w-4 h-4 text-amber-400" />
+              <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
             )}
           </button>
         </div>
