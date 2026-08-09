@@ -43,9 +43,35 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
   const lang: LanguageCode = (language as LanguageCode) || 'en';
   const [fontSize, setFontSize] = useState<'normal' | 'large' | 'xlarge'>('normal');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechProgress, setSpeechProgress] = useState<{ current: number; total: number } | null>(null);
   const [copiedShare, setCopiedShare] = useState(false);
   const [visualMode, setVisualMode] = useState<'default' | 'dynamic_photo' | 'ai_art'>('default');
   const [variantIndex, setVariantIndex] = useState(0);
+
+  // Persistent refs to prevent garbage collection on mobile browsers
+  const utteranceRef = React.useRef<SpeechSynthesisUtterance | null>(null);
+  const speechChunksRef = React.useRef<string[]>([]);
+  const currentChunkIndexRef = React.useRef<number>(0);
+
+  // Pre-initialize voices on mobile browsers
+  useEffect(() => {
+    if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        try {
+          window.speechSynthesis.getVoices();
+        } catch (e) {
+          console.warn('Voices load error:', e);
+        }
+      };
+    }
+  }, []);
+
+  // Cleanup speech on unmount or article change
+  useEffect(() => {
+    return () => {
+      stopSpeech();
+    };
+  }, [article?.id]);
 
   if (!article) return null;
 
@@ -75,21 +101,135 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
     return bias;
   };
 
-  const handleToggleSpeech = () => {
+  const getLanguageTag = (l: LanguageCode): string => {
+    switch (l) {
+      case 'fr': return 'fr-FR';
+      case 'es': return 'es-ES';
+      case 'de': return 'de-DE';
+      case 'ja': return 'ja-JP';
+      case 'ar': return 'ar-SA';
+      default: return 'en-US';
+    }
+  };
+
+  const stopSpeech = () => {
     if ('speechSynthesis' in window) {
-      if (isSpeaking) {
+      try {
         window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-      } else {
-        const textToRead = `${article.title}. ${article.aiSummary?.overview || ''} ${article.content}`;
-        const utterance = new SpeechSynthesisUtterance(textToRead);
-        utterance.rate = 0.95;
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
-        window.speechSynthesis.speak(utterance);
-        setIsSpeaking(true);
+      } catch (e) {
+        console.warn('Speech cancellation error:', e);
       }
     }
+    setIsSpeaking(false);
+    setSpeechProgress(null);
+    currentChunkIndexRef.current = 0;
+    speechChunksRef.current = [];
+    utteranceRef.current = null;
+  };
+
+  const handleToggleSpeech = () => {
+    if (!('speechSynthesis' in window)) {
+      alert('Text-to-speech reading is not supported on this browser or webview.');
+      return;
+    }
+
+    if (isSpeaking) {
+      stopSpeech();
+      return;
+    }
+
+    // Cancel any ongoing or stuck states on mobile
+    window.speechSynthesis.cancel();
+
+    // Clean text & build comprehensive speech script
+    const titleText = article.title;
+    const overviewText = article.aiSummary?.overview ? `Executive summary: ${article.aiSummary.overview}` : '';
+    const fullBody = article.content.replace(/\n+/g, ' ');
+    const combinedText = `${titleText}. ${overviewText}. ${fullBody}`;
+
+    // Split text into short chunks (~150-180 chars max) for mobile speech engine stability
+    const rawChunks = combinedText.match(/[^.!?]+[.!?]+/g) || [combinedText];
+    const chunks: string[] = [];
+
+    rawChunks.forEach(chunk => {
+      const trimmed = chunk.trim();
+      if (!trimmed) return;
+      if (trimmed.length > 180) {
+        const subParts = trimmed.match(/.{1,160}(?:\s+|$)/g) || [trimmed];
+        chunks.push(...subParts.map(s => s.trim()).filter(Boolean));
+      } else {
+        chunks.push(trimmed);
+      }
+    });
+
+    if (chunks.length === 0) return;
+
+    speechChunksRef.current = chunks;
+    currentChunkIndexRef.current = 0;
+    setIsSpeaking(true);
+    setSpeechProgress({ current: 1, total: chunks.length });
+
+    const speakChunk = (index: number) => {
+      if (index >= chunks.length) {
+        stopSpeech();
+        return;
+      }
+
+      currentChunkIndexRef.current = index;
+      setSpeechProgress({ current: index + 1, total: chunks.length });
+
+      const text = chunks[index];
+      const utterance = new SpeechSynthesisUtterance(text);
+      utteranceRef.current = utterance; // Retain reference to prevent mobile garbage collection
+
+      const langTag = getLanguageTag(lang);
+      utterance.lang = langTag;
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+
+      // Select voice if loaded
+      try {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+          const matchingVoice = voices.find(v => v.lang.toLowerCase().startsWith(langTag.toLowerCase().slice(0, 2)))
+            || voices.find(v => v.lang.toLowerCase().includes('en'))
+            || voices[0];
+          if (matchingVoice) {
+            utterance.voice = matchingVoice;
+          }
+        }
+      } catch (e) {
+        console.warn('Voice matching error:', e);
+      }
+
+      utterance.onend = () => {
+        setTimeout(() => {
+          speakChunk(index + 1);
+        }, 120);
+      };
+
+      utterance.onerror = (err) => {
+        console.warn('Mobile speech synthesis chunk error:', err);
+        if (index + 1 < chunks.length) {
+          speakChunk(index + 1);
+        } else {
+          stopSpeech();
+        }
+      };
+
+      try {
+        window.speechSynthesis.speak(utterance);
+        // Resume if mobile webview placed synthesis in paused state
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      } catch (e) {
+        console.error('TTS execution error on mobile:', e);
+        stopSpeech();
+      }
+    };
+
+    speakChunk(0);
   };
 
   const handleShare = () => {
@@ -192,6 +332,25 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Active Mobile Audio Reading Player Bar */}
+        {isSpeaking && speechProgress && (
+          <div className="sticky top-[53px] z-10 bg-blue-600 text-white px-4 py-2 flex items-center justify-between gap-3 text-xs font-medium shadow-sm">
+            <div className="flex items-center gap-2 truncate">
+              <Volume2 className="w-4 h-4 animate-pulse shrink-0 text-blue-200" />
+              <span className="truncate">
+                Reading Aloud ({speechProgress.current} of {speechProgress.total} sentences)
+              </span>
+            </div>
+            <button
+              onClick={stopSpeech}
+              className="px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold transition-colors shrink-0 flex items-center gap-1"
+            >
+              <VolumeX className="w-3.5 h-3.5" />
+              <span>Stop</span>
+            </button>
+          </div>
+        )}
 
         {/* Article Scroll Body */}
         <div className="p-4 sm:p-8 overflow-y-auto max-h-[85vh]">
