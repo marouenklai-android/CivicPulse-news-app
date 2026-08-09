@@ -24,11 +24,14 @@ import { TrendingView } from './components/TrendingView';
 import { OnboardingModal } from './components/OnboardingModal';
 import { AnimatePresence, motion } from 'motion/react';
 
-import { SlidersHorizontal, RefreshCw, Search, ChevronLeft, ChevronRight, Smartphone } from 'lucide-react';
+import { SlidersHorizontal, RefreshCw, Search, ChevronLeft, ChevronRight, Smartphone, Wifi, Battery, Signal, Maximize2, Minimize2 } from 'lucide-react';
 
 const NAV_TABS: NavTab[] = ['feed', 'compare', 'explore', 'saved', 'profile'];
 
 export default function App() {
+  // Device Frame Mode: Android Pixel 8 Frame by default
+  const [isAndroidFrame, setIsAndroidFrame] = useState<boolean>(true);
+
   // Theme state: light or dark
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('civicpulse_theme');
@@ -369,79 +372,146 @@ export default function App() {
     : (globalTrending.length > 0 ? globalTrending : translatedArticles.slice(0, 5));
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-slate-200/80 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 py-3 sm:py-6 px-2 sm:px-4 flex flex-col items-center">
       
-      {/* Top Application Header */}
-      <Header
-        theme={theme}
-        onToggleTheme={handleToggleTheme}
-        language={userPreferences.language}
-        onChangeLanguage={(lang) => setUserPreferences(prev => ({ ...prev, language: lang }))}
-        onOpenSearch={() => {
-          const searchElem = document.getElementById('main-feed-search-input');
-          if (searchElem) {
-            searchElem.focus();
-          } else {
-            setActiveTab('explore');
-          }
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        savedCount={savedArticleIds.length}
-        onOpenSaved={() => setActiveTab('saved')}
-      />
-
-      {/* Toast Feedback for Tab Swiping & Feed Refresh */}
-      <AnimatePresence>
-        {refreshToast && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-slate-900/90 dark:bg-slate-100/90 text-white dark:text-slate-900 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 border border-slate-700 dark:border-slate-300 pointer-events-none"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-emerald-400 dark:text-emerald-600 animate-spin" />
-            <span>{refreshToast}</span>
-          </motion.div>
-        )}
-
-        {swipeHint && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-3.5 py-1.5 bg-blue-600 text-white rounded-full text-xs font-mono font-bold shadow-xl flex items-center gap-2 border border-blue-400/30 pointer-events-none"
-          >
-            <Smartphone className="w-3.5 h-3.5 animate-bounce" />
-            <span>{swipeHint}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Main Canvas Body with Touch Swipe & Pull-To-Refresh Gestures */}
-      <main 
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className="max-w-4xl mx-auto px-4 pt-2 pb-28 relative select-none sm:select-text"
-      >
-        {/* Pull Down to Refresh Visual Bar */}
-        {(pullDistance > 0 || isRefreshing) && (
-          <div 
-            style={{ height: `${isRefreshing ? 52 : Math.min(pullDistance * 0.7, 60)}px` }}
-            className="overflow-hidden transition-all duration-200 flex items-center justify-center bg-blue-500/10 dark:bg-blue-400/10 border-b border-blue-500/20 rounded-b-2xl mb-3"
-          >
-            <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
-              <RefreshCw className={`w-4 h-4 ${isRefreshing || pullDistance > 50 ? 'animate-spin' : ''}`} />
-              <span>
-                {isRefreshing
-                  ? 'Refreshing feed signals...'
-                  : pullDistance > 55
-                  ? 'Release finger to refresh feed'
-                  : 'Pull down to refresh feed'}
+      {/* Top Android Platform Switcher Banner */}
+      <div className="w-full max-w-2xl mb-4 bg-slate-900 text-white rounded-2xl p-2.5 px-4 shadow-md flex items-center justify-between gap-2 border border-slate-700/80">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-xs">
+            🤖
+          </div>
+          <div>
+            <h2 className="text-xs sm:text-sm font-bold flex items-center gap-1.5 leading-none">
+              <span>Android Jetpack Compose Native App</span>
+              <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono text-[9px] uppercase tracking-wider border border-blue-400/30">
+                Pixel 8
               </span>
+            </h2>
+            <p className="text-[10px] text-slate-400 mt-0.5 hidden xs:block">
+              {isAndroidFrame ? 'Running in Android Phone Device Frame' : 'Running in Expanded Full Width Mode'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsAndroidFrame(!isAndroidFrame)}
+          className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all shrink-0 cursor-pointer"
+        >
+          {isAndroidFrame ? (
+            <>
+              <Maximize2 className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Full Width</span>
+            </>
+          ) : (
+            <>
+              <Smartphone className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Phone Frame</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Main App Container (Android Phone Shell OR Wide View) */}
+      <div className={`w-full transition-all duration-300 ${
+        isAndroidFrame
+          ? 'max-w-[430px] bg-slate-50 dark:bg-slate-900 rounded-[44px] border-[10px] border-slate-900 dark:border-slate-800 shadow-2xl overflow-hidden relative ring-1 ring-slate-900/20 my-2'
+          : 'max-w-4xl bg-slate-50 dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden'
+      }`}>
+
+        {/* Android Hardware Status Bar (Clock, Punch Hole Camera, 5G, Battery) */}
+        {isAndroidFrame && (
+          <div className="w-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 px-6 pt-3 pb-1 flex items-center justify-between text-[11px] font-bold font-mono border-b border-slate-100 dark:border-slate-800/60 select-none">
+            <span>09:41</span>
+            
+            {/* Punch Hole Camera Cutout */}
+            <div className="w-4 h-4 rounded-full bg-slate-900 dark:bg-black ring-2 ring-slate-700/50 flex items-center justify-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-slate-800 dark:bg-slate-900" />
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-sans font-bold text-blue-600 dark:text-blue-400">5G</span>
+              <Signal className="w-3.5 h-3.5" />
+              <Wifi className="w-3.5 h-3.5" />
+              <Battery className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </div>
           </div>
         )}
+
+        {/* Top Application Header */}
+        <Header
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
+          language={userPreferences.language}
+          onChangeLanguage={(lang) => setUserPreferences(prev => ({ ...prev, language: lang }))}
+          onOpenSearch={() => {
+            const searchElem = document.getElementById('main-feed-search-input');
+            if (searchElem) {
+              searchElem.focus();
+            } else {
+              setActiveTab('explore');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          savedCount={savedArticleIds.length}
+          onOpenSaved={() => setActiveTab('saved')}
+          isAndroidFrame={isAndroidFrame}
+          onToggleAndroidFrame={() => setIsAndroidFrame(!isAndroidFrame)}
+        />
+
+        {/* Toast Feedback for Tab Swiping & Feed Refresh */}
+        <AnimatePresence>
+          {refreshToast && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.9 }}
+              className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-slate-900/90 dark:bg-slate-100/90 text-white dark:text-slate-900 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 border border-slate-700 dark:border-slate-300 pointer-events-none"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-emerald-400 dark:text-emerald-600 animate-spin" />
+              <span>{refreshToast}</span>
+            </motion.div>
+          )}
+
+          {swipeHint && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-3.5 py-1.5 bg-blue-600 text-white rounded-full text-xs font-mono font-bold shadow-xl flex items-center gap-2 border border-blue-400/30 pointer-events-none"
+            >
+              <Smartphone className="w-3.5 h-3.5 animate-bounce" />
+              <span>{swipeHint}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Canvas Body with Touch Swipe & Pull-To-Refresh Gestures */}
+        <main 
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className={`px-3 sm:px-4 pt-2 pb-24 relative select-none sm:select-text overflow-y-auto ${
+            isAndroidFrame ? 'max-h-[720px] min-h-[620px]' : 'min-h-screen'
+          }`}
+        >
+          {/* Pull Down to Refresh Visual Bar */}
+          {(pullDistance > 0 || isRefreshing) && (
+            <div 
+              style={{ height: `${isRefreshing ? 52 : Math.min(pullDistance * 0.7, 60)}px` }}
+              className="overflow-hidden transition-all duration-200 flex items-center justify-center bg-blue-500/10 dark:bg-blue-400/10 border-b border-blue-500/20 rounded-b-2xl mb-3"
+            >
+              <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
+                <RefreshCw className={`w-4 h-4 ${isRefreshing || pullDistance > 50 ? 'animate-spin' : ''}`} />
+                <span>
+                  {isRefreshing
+                    ? 'Refreshing feed signals...'
+                    : pullDistance > 55
+                    ? 'Release finger to refresh feed'
+                    : 'Pull down to refresh feed'}
+                </span>
+              </div>
+            </div>
+          )}
 
         {/* Swipe Gesture Tip Bar for Mobile */}
         <div className="hidden sm:flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 mb-2 px-1">
@@ -731,8 +801,10 @@ export default function App() {
         onChangeTab={(tab) => setActiveTab(tab)}
         savedCount={savedArticleIds.length}
         language={userPreferences.language}
+        isAndroidFrame={isAndroidFrame}
       />
 
+      </div>
     </div>
   );
 }
