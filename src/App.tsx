@@ -424,24 +424,24 @@ export default function App() {
         onTouchEnd={handleTouchEnd}
         className="max-w-4xl mx-auto px-4 pt-2 pb-28 relative select-none sm:select-text"
       >
-        {/* Pull Down to Refresh Visual Bar */}
-        {(pullDistance > 0 || isRefreshing) && (
-          <div 
-            style={{ height: `${isRefreshing ? 52 : Math.min(pullDistance * 0.7, 60)}px` }}
-            className="overflow-hidden transition-all duration-200 flex items-center justify-center bg-blue-500/10 dark:bg-blue-400/10 border-b border-blue-500/20 rounded-b-2xl mb-3"
-          >
-            <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
-              <RefreshCw className={`w-4 h-4 ${isRefreshing || pullDistance > 50 ? 'animate-spin' : ''}`} />
-              <span>
-                {isRefreshing
-                  ? 'Refreshing feed signals...'
-                  : pullDistance > 55
-                  ? 'Release finger to refresh feed'
-                  : 'Pull down to refresh feed'}
-              </span>
+          {/* Pull Down to Refresh Visual Bar */}
+          {(pullDistance > 0 || isRefreshing) && (
+            <div 
+              style={{ height: `${isRefreshing ? 52 : Math.min(pullDistance * 0.7, 60)}px` }}
+              className="overflow-hidden transition-all duration-200 flex items-center justify-center bg-blue-500/10 dark:bg-blue-400/10 border-b border-blue-500/20 rounded-b-2xl mb-3"
+            >
+              <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
+                <RefreshCw className={`w-4 h-4 ${isRefreshing || pullDistance > 50 ? 'animate-spin' : ''}`} />
+                <span>
+                  {isRefreshing
+                    ? 'Refreshing feed signals...'
+                    : pullDistance > 55
+                    ? 'Release finger to refresh feed'
+                    : 'Pull down to refresh feed'}
+                </span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Swipe Gesture Tip Bar for Mobile */}
         <div className="hidden sm:flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 mb-2 px-1">
