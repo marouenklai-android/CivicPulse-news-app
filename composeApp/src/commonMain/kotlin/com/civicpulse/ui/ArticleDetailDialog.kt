@@ -50,18 +50,31 @@ fun ArticleDetailDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onClose) {
-                        Text("← Close", fontWeight = FontWeight.Bold)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        IconButton(
+                            onClick = onClose,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Text("✕", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                        Text(
+                            text = "Executive Intelligence Brief",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         IconButton(onClick = { onToggleBookmark(article) }) {
-                            Text(if (isBookmarked) "🔖" else "🏷️", fontSize = 20.sp)
+                            Text(if (isBookmarked) "🔖" else "🏷️", fontSize = 18.sp)
                         }
                     }
                 }
 
-                Divider()
+                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                 // Content Body
                 Column(
@@ -72,7 +85,8 @@ fun ArticleDetailDialog(
                 ) {
                     // Header Meta
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
@@ -82,15 +96,24 @@ fun ArticleDetailDialog(
                             Text(
                                 text = article.source,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                         Text(
-                            text = "• By ${article.author} • ${article.timeAgo}",
+                            text = "• By ${article.author}",
                             fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        Text(
+                            text = "• ${article.timeAgo}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
                         )
                     }
 

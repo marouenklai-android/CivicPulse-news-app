@@ -18,7 +18,7 @@ import com.civicpulse.viewmodel.NewsViewModel
 @Composable
 fun App() {
     var currentLanguage by remember { mutableStateOf(AppLanguage.EN) }
-    var selectedTab by remember { mutableStateOf(NavigationTab.EXPLORE) }
+    var selectedTab by remember { mutableStateOf(NavigationTab.FEED) }
     var selectedArticle by remember { mutableStateOf<Article?>(null) }
     var isSearchOpen by remember { mutableStateOf(false) }
 
@@ -101,13 +101,17 @@ fun App() {
                             }
                             is NewsUiState.Success -> {
                                 when (selectedTab) {
-                                    NavigationTab.EXPLORE -> HomeScreen(
+                                    NavigationTab.FEED -> HomeScreen(
                                         uiState = state,
                                         onIntent = { intent -> viewModel.processIntent(intent) },
                                         onSelectArticle = { article -> selectedArticle = article }
                                     )
                                     NavigationTab.COMPARE -> CompareCoverageView(
                                         articles = state.articles,
+                                        onSelectArticle = { article -> selectedArticle = article }
+                                    )
+                                    NavigationTab.EXPLORE -> TrendingCarouselView(
+                                        trendingArticles = state.articles,
                                         onSelectArticle = { article -> selectedArticle = article }
                                     )
                                     NavigationTab.SAVED -> SavedView(
@@ -124,16 +128,6 @@ fun App() {
                                         onToggleTheme = { viewModel.processIntent(NewsUserIntent.ToggleTheme) },
                                         onUpdatePreferences = { /* Preference updates */ }
                                     )
-                                    NavigationTab.COMPOSE_STUDIO -> Box(
-                                        modifier = Modifier.fillMaxSize().padding(24.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text("⚡ Jetpack Compose Multiplatform Studio", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Text("100% Native Kotlin & Material 3 UI", fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
-                                        }
-                                    }
                                 }
                             }
                         }

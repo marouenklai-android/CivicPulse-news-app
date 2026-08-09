@@ -163,11 +163,11 @@ fun HomeScreen(
                 }
 
                 items(uiState.articles) { article ->
-                    ArticleRowItem(
+                    ArticleCard(
                         article = article,
                         isBookmarked = uiState.savedArticleIds.contains(article.id),
-                        onBookmarkToggle = { onIntent(NewsUserIntent.ToggleBookmark(article.id)) },
-                        onClick = { onSelectArticle(article) }
+                        onSelect = onSelectArticle,
+                        onToggleBookmark = { onIntent(NewsUserIntent.ToggleBookmark(article.id)) }
                     )
                 }
             }

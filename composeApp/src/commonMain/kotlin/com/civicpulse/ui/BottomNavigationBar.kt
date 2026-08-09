@@ -8,12 +8,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-enum class NavigationTab(val title: String, val icon: String) {
-    EXPLORE("Explore", "🧭"),
-    SAVED("Saved", "🔖"),
-    COMPARE("Compare", "⚖️"),
-    PROFILE("Profile", "👤"),
-    COMPOSE_STUDIO("Compose Studio", "⚡")
+enum class NavigationTab(val titleKey: String, val fallbackTitle: String, val icon: String) {
+    FEED("navFeed", "Feed", "📡"),
+    COMPARE("navCompare", "Compare", "⚖️"),
+    EXPLORE("navExplore", "Explore", "🧭"),
+    SAVED("navSaved", "Saved", "🔖"),
+    PROFILE("navProfile", "Profile", "👤")
 }
 
 @Composable
@@ -30,6 +30,8 @@ fun BottomNavigationBar(
     ) {
         NavigationTab.values().forEach { tab ->
             val selected = currentTab == tab
+            val titleText = stringResource(tab.titleKey)
+
             NavigationBarItem(
                 selected = selected,
                 onClick = { onTabSelected(tab) },
@@ -37,21 +39,28 @@ fun BottomNavigationBar(
                     BadgedBox(
                         badge = {
                             if (tab == NavigationTab.SAVED && savedCount > 0) {
-                                Badge { Text(savedCount.toString()) }
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ) {
+                                    Text(savedCount.toString(), fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                                }
                             }
                         }
                     ) {
-                        Text(tab.icon, fontSize = 20.sp)
+                        Text(tab.icon, fontSize = 18.sp)
                     }
                 },
                 label = {
                     Text(
-                        text = tab.title,
+                        text = if (titleText.startsWith("Key:")) tab.fallbackTitle else titleText,
                         fontSize = 11.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1
                     )
                 }
             )
         }
     }
 }
+
